@@ -1,0 +1,527 @@
+{
+  "datasets": [
+    {
+      "name": "98deb8d6",
+      "displayName": "gold_bracket",
+      "queryLines": [
+        "SELECT * FROM adb_afcon_workspace.default.gold_bracket"
+      ]
+    },
+    {
+      "name": "b3a49ceb",
+      "displayName": "gold_discipline",
+      "queryLines": [
+        "SELECT * FROM adb_afcon_workspace.default.gold_discipline"
+      ]
+    },
+    {
+      "name": "92637db6",
+      "displayName": "gold_dominance",
+      "queryLines": [
+        "SELECT * FROM adb_afcon_workspace.default.gold_dominance"
+      ]
+    },
+    {
+      "name": "72828de7",
+      "displayName": "gold_efficiency",
+      "queryLines": [
+        "SELECT * FROM adb_afcon_workspace.default.gold_efficiency"
+      ]
+    },
+    {
+      "name": "4f33d667",
+      "displayName": "gold_player_impact",
+      "queryLines": [
+        "SELECT * FROM adb_afcon_workspace.default.gold_player_impact"
+      ]
+    },
+    {
+      "name": "077f0250",
+      "displayName": "gold_pressing",
+      "queryLines": [
+        "SELECT * FROM adb_afcon_workspace.default.gold_pressing"
+      ]
+    },
+    {
+      "name": "5976a7ed",
+      "displayName": "gold_teams",
+      "queryLines": [
+        "SELECT * FROM adb_afcon_workspace.default.gold_teams"
+      ]
+    },
+    {
+      "name": "3098467e",
+      "displayName": "Master_Data",
+      "queryLines": [
+        "/* NAME THIS DATASET: Gold_Master_Dataset */\n",
+        "WITH Stage_Dominance AS (\n",
+        "    -- Pre-aggregate to avoid duplication\n",
+        "    SELECT \n",
+        "        stage, \n",
+        "        team_name,\n",
+        "        SUM(final_third_passes) as total_passes,\n",
+        "        AVG(field_tilt) as avg_field_tilt\n",
+        "    FROM default.gold_dominance\n",
+        "    GROUP BY stage, team_name\n",
+        ")\n",
+        "\n",
+        "SELECT\n",
+        "    e.team_name,\n",
+        "    e.stage,\n",
+        "    COALESCE(e.total_goals, 0) as Goals,\n",
+        "    COALESCE(e.total_xg, 0) as xG,\n",
+        "    e.efficiency_index as Efficiency,\n",
+        "    COALESCE(p.total_pressures, 0) as Pressures,\n",
+        "    COALESCE(d.total_fouls, 0) as Fouls,\n",
+        "    COALESCE(dom.avg_field_tilt, 0) as Field_Tilt,\n",
+        "    COALESCE(dom.total_passes, 0) as Final_Third_Passes,\n",
+        "    -- Label for outliers (Use this in the chart)\n",
+        "    CASE \n",
+        "        WHEN e.efficiency_index >= 1.5 THEN e.team_name\n",
+        "        WHEN e.efficiency_index <= -1.5 THEN e.team_name\n",
+        "        ELSE NULL \n",
+        "    END as Label_Outlier\n",
+        "FROM default.gold_efficiency e\n",
+        "LEFT JOIN default.gold_pressing p ON e.team_name = p.pressing_team AND e.stage = p.stage\n",
+        "LEFT JOIN default.gold_discipline d ON e.team_name = d.team_name AND e.stage = d.stage\n",
+        "LEFT JOIN Stage_Dominance dom ON e.team_name = dom.team_name AND e.stage = dom.stage"
+      ]
+    },
+    {
+      "name": "62973ea3",
+      "displayName": "top_player",
+      "queryLines": [
+        "SELECT \n",
+        "    player_name,\n",
+        "    team_name,\n",
+        "    stage,\n",
+        "    total_xg_generated as xG_Created,\n",
+        "    total_actions as Touches\n",
+        "FROM default.gold_player_impact\n",
+        "-- We return ALL rows so the dashboard can filter and sum them correctly later"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "a44226c1",
+      "displayName": "report",
+      "layout": [
+        {
+          "widget": {
+            "name": "f4d1b57b",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# <span style=\"text-align:center;display:block;\">AFCON DASHBOARD</span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "total-goals-per-team",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3098467e",
+                  "fields": [
+                    {
+                      "name": "team_name",
+                      "expression": "`team_name`"
+                    },
+                    {
+                      "name": "sum(Goals)",
+                      "expression": "SUM(`Goals`)"
+                    },
+                    {
+                      "name": "sum(xG)",
+                      "expression": "SUM(`xG`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "team_name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "custom-order",
+                      "orderedValues": [
+                        "Equatorial Guinea",
+                        "Senegal",
+                        "Cape Verde Islands",
+                        "Egypt",
+                        "Angola",
+                        "Morocco",
+                        "Ghana",
+                        "South Africa",
+                        "Cameroon",
+                        "Mozambique",
+                        "Burkina Faso",
+                        "Mali",
+                        "Mauritania",
+                        "Algeria",
+                        "Congo DR",
+                        "Côte d'Ivoire",
+                        "Nigeria",
+                        "Guinea",
+                        "Gambia",
+                        "Zambia",
+                        "Namibia",
+                        "Tanzania",
+                        "Guinea-Bissau",
+                        "Tunisia"
+                      ]
+                    }
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(Goals)"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    },
+                    "axis": {
+                      "hideGrid": false,
+                      "hideLabels": false
+                    }
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(xG)"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "title": "Total goals per team",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "group"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "e651ea27",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3098467e",
+                  "fields": [
+                    {
+                      "name": "team_name",
+                      "expression": "`team_name`"
+                    },
+                    {
+                      "name": "sum(Final_Third_Passes)",
+                      "expression": "SUM(`Final_Third_Passes`)"
+                    },
+                    {
+                      "name": "avg(Field_Tilt)",
+                      "expression": "AVG(`Field_Tilt`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "team_name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "custom-order",
+                      "orderedValues": [
+                        "Algeria",
+                        "Angola",
+                        "Burkina Faso",
+                        "Cameroon",
+                        "Cape Verde Islands",
+                        "Congo DR",
+                        "Côte d'Ivoire",
+                        "Egypt",
+                        "Equatorial Guinea",
+                        "Gambia",
+                        "Ghana",
+                        "Guinea",
+                        "Guinea-Bissau",
+                        "Mali",
+                        "Mauritania",
+                        "Morocco",
+                        "Mozambique",
+                        "Namibia",
+                        "Nigeria",
+                        "Senegal",
+                        "South Africa",
+                        "Tanzania",
+                        "Tunisia",
+                        "Zambia"
+                      ]
+                    }
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(Final_Third_Passes)"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "avg(Field_Tilt)"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "1ca31e6a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4f33d667",
+                  "fields": [
+                    {
+                      "name": "sum(total_xg_generated)",
+                      "expression": "SUM(`total_xg_generated`)"
+                    },
+                    {
+                      "name": "player_name",
+                      "expression": "`player_name`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(total_xg_generated)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "player_name",
+                  "scale": {
+                    "type": "categorical",
+                    "categorySize": {
+                      "type": "number-of-categories",
+                      "number": 10
+                    },
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "d3ec378d",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3098467e",
+                  "fields": [
+                    {
+                      "name": "team_name",
+                      "expression": "`team_name`"
+                    },
+                    {
+                      "name": "Pressures",
+                      "expression": "`Pressures`"
+                    },
+                    {
+                      "name": "Fouls",
+                      "expression": "`Fouls`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "Pressures",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "Fouls",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "team_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 10,
+            "width": 3,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "a2f6c9f6",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "4343cf33",
+            "queries": [
+              {
+                "name": "dashboards/01f0e3444bb01dbdbc938d059a257e4a/datasets/01f0e34a0ff6154e82602d3929c79385_stage",
+                "query": {
+                  "datasetName": "3098467e",
+                  "fields": [
+                    {
+                      "name": "stage",
+                      "expression": "`stage`"
+                    },
+                    {
+                      "name": "stage_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f0e3444bb01dbdbc938d059a257e4a/datasets/01f0e3494a691a45a74303af6a909085_stage",
+                "query": {
+                  "datasetName": "4f33d667",
+                  "fields": [
+                    {
+                      "name": "stage",
+                      "expression": "`stage`"
+                    },
+                    {
+                      "name": "stage_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "stage",
+                    "queryName": "dashboards/01f0e3444bb01dbdbc938d059a257e4a/datasets/01f0e34a0ff6154e82602d3929c79385_stage"
+                  },
+                  {
+                    "fieldName": "stage",
+                    "queryName": "dashboards/01f0e3444bb01dbdbc938d059a257e4a/datasets/01f0e3494a691a45a74303af6a909085_stage"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

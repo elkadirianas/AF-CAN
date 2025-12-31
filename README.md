@@ -7,6 +7,25 @@ This project is an end-to-end **Data Engineering & Analytics** solution built to
 
 Moving beyond simple scoreboards, this project implements a **Lakehouse Architecture** on Azure Databricks to process granular event data (passes, shots, fouls, pressure). It features a "Time-Travel" ingestion strategy that simulates the tournament unfolding phase by phase (Group Stage → Knockouts → Final), transforming raw JSON-derived data into advanced tactical KPIs like **Expected Goals (xG)**, **Field Tilt**, and **Player Impact Scores**.
 
+
+###  how to run the project ? 
+This pipeline is designed to be user-friendly and simulates the real-time progression of the tournament.
+
+Import the Pipeline: Clone or upload the files from the Pipeline/ folder into your Databricks Workspace.
+
+Execute the Orchestrator: Open the notebook named 00_run_pipeline_end_to_end.
+
+Simulate Tournament Progress: Simply run this notebook.
+
+Logic: The pipeline automatically detects the current state and ingests the next specific phase (e.g., if Group Stage is done, it loads Round of 16).
+
+View Results: Once the run is complete, navigate to the Databricks Dashboard to see the visuals and KPIs update instantly with the newly ingested data.
+
+Tip: Run it consecutively to simulate the advancement from the opening game to the Final.
+
+
+
+
 ## 🏗 Architecture & Methodology
 
 The project follows the **Medallion Architecture** (Bronze, Silver, Gold) to ensure data quality and scalability.
@@ -52,3 +71,5 @@ The project follows the **Medallion Architecture** (Bronze, Silver, Gold) to ens
 │   └── splitter.py           # Python script to segregate data by phase
 │
 └── visuals/                  # Dashboard screenshots and assets
+
+
